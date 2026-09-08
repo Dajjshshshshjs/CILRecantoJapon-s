@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本語バトル - Nihongo Battle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            color: #1a1a1a;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        /* ===== TELA DE AUTENTICAÇÃO ===== */
+        #authScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .auth-header h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+            color: #2196F3;
+            font-weight: 600;
+        }
+
+        .auth-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .auth-form {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #1a1a1a;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #2196F3;
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .btn-primary:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #2196F3;
+            border: 1.5px solid #2196F3;
+        }
+
+        .btn-secondary:hover {
+            background: #f0f8ff;
+        }
+
+        .auth-link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .auth-link button {
+            background: none;
+            border: none;
+            color: #2196F3;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== HEADER DO JOGO ===== */
+        .game-header {
+            background: white;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-radius: 12px;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2196F3;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-profile {
+            text-align: right;
+        }
+
+        .user-profile p {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .user-profile .name {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .user-profile .level {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #e0e0e0;
+        }
+
+        /* ===== TELA DE MENU ===== */
+        #gameScreen {
+            display: none;
+        }
+
+        .menu-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-box {
+            grid-column: 1 / -1;
+            padding: 24px;
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .welcome-box h2 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .welcome-box p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .menu-button {
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .menu-button.play {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .menu-button.play:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(76, 175, 80, 0.3);
+        }
+
+        .menu-button.ai {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+        }
+
+        .menu-button.ai:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(255, 152, 0, 0.3);
+        }
+
+        .icon {
+            font-size: 28px;
+        }
+
+        /* ===== STATS ===== */
+        .stats-container {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: #f9f9f9;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2196F3;
+        }
+
+        /* ===== LEADERBOARD ===== */
+        .leaderboard-container {
+            grid-column: 1 / -1;
+        }
+
+        .leaderboard-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+        }
+
+        .leaderboard-item {
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .leaderboard-item:hover {
+            background: #f9f9f9;
+        }
+
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+
+        .leaderboard-rank {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2196F3;
+            min-width: 30px;
+        }
+
+        .leaderboard-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+            flex: 1;
+            margin-left: 12px;
+        }
+
+        .leaderboard-points {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        /* ===== TELA DE JOGO ===== */
+        #playingScreen {
+            display: none;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .game-progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .score-box {
+            text-align: center;
+            flex: 1;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .score-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #2196F3;
+        }
+
+        .progress-text {
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+            flex: 1;
+        }
+
+        .question-box {
+            padding: 40px 30px;
+            text-align: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+        }
+
+        .question-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .japanese-text {
+            font-size: 56px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2196F3;
+            letter-spacing: 4px;
+        }
+
+        .hint-text {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .input-group input:disabled {
+            background: #f5f5f5;
+            color: #999;
+        }
+
+        .feedback {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+
+        .feedback.incorrect {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+
+        /* ===== TELA DE RESULTADOS ===== */
+        #resultsScreen {
+            display: none;
+        }
+
+        .results-container {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .results-title {
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #1a1a1a;
+        }
+
+        .results-scores {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .result-score {
+            padding: 24px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .result-score-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .result-score-value {
+            font-size: 48px;
+            font-weight: 600;
+            color: #2196F3;
+        }
+
+        .result-xp {
+            padding: 20px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
+            border-radius: 12px;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        .result-xp-label {
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .result-xp-value {
+            font-size: 32px;
+            font-weight: 600;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .menu-content {
+                grid-template-columns: 1fr;
+            }
+
+            .japanese-text {
+                font-size: 40px;
+            }
+
+            .results-scores {
+                grid-template-columns: 1fr;
+            }
+
+            .game-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* ===== ANIMAÇÕES ===== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* ===== BOTÃO VOLTAR ===== */
+        .btn-back {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+
+        .btn-back:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <!-- TELA DE AUTENTICAÇÃO -->
+    <div id="authScreen" class="fade-in">
+        <div class="auth-container">
+            <div class="card">
+                <div class="auth-header">
+                    <h1>日本語バトル</h1>
+                    <p id="authSubtitle">Faça login para continuar</p>
+                </div>
+
+                <div class="auth-form">
+                    <div class="error-message" id="errorMessage"></div>
+
+                    <!-- Login Form -->
+                    <div id="loginForm">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="loginEmail" placeholder="seu@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Senha</label>
+                            <input type="password" id="loginPassword" placeholder="Sua senha">
+                        </div>
+                        <button class="btn btn-primary" onclick="handleLogin()">
+                            <span>🔓</span>
+                            <span>Entrar</span>
+                        </button>
+                        <div class="auth-link">
+                            Não tem conta? 
+                            <button onclick="toggleAuthMode()">Cadastre-se</button>
+                        </div>
+                    </div>
+
+                    <!-- Signup Form -->
+                    <div id="signupForm" style="display: none;">
+                        <div class="form-group">
+                            <label>Nome de Usuário</label>
+                            <input type="text" id="signupName" placeholder="Seu nome...">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="signupEmail" placeholder="seu@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Senha</label>
+                            <input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirmar Senha</label>
+                            <input type="password" id="signupConfirm" placeholder="Confirme sua senha">
+                        </div>
+                        <button class="btn btn-primary" onclick="handleSignup()">
+                            <span>✨</span>
+                            <span>Criar Conta</span>
+                        </button>
+                        <div class="auth-link">
+                            Já tem conta? 
+                            <button onclick="toggleAuthMode()">Faça login</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA DO JOGO -->
+    <div id="gameScreen">
+        <div class="container">
+            <!-- Header -->
+            <div class="game-header">
+                <div class="header-title">日本語バトル</div>
+                <div class="user-info">
+                    <div class="user-profile">
+                        <p class="name" id="userName">User</p>
+                        <p class="level" id="userLevel">Nível 1</p>
+                    </div>
+                    <button class="btn-logout" onclick="handleLogout()">🚪 Sair</button>
+                </div>
+            </div>
+
+            <!-- Menu Screen -->
+            <div id="menuContent" class="fade-in">
+                <div class="card menu-content">
+                    <div class="welcome-box">
+                        <h2>Bem-vindo, <span id="welcomeName">User</span>!</h2>
+                        <p>Você tem <strong id="welcomePoints">0</strong> pontos</p>
+                    </div>
+
+                    <button class="card menu-button play" onclick="startGame('pvp')">
+                        <span class="icon">👥</span>
+                        <span>Desafio Multiplayer</span>
+                    </button>
+
+                    <button class="card menu-button ai" onclick="startGame('ai')">
+                        <span class="icon">🤖</span>
+                        <span>Jogar contra IA</span>
+                    </button>
+
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <div class="stat-label">Vitórias</div>
+                            <div class="stat-value" id="statsWins">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Derrotas</div>
+                            <div class="stat-value" id="statsLosses">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total de Pontos</div>
+                            <div class="stat-value" id="statsTotalPoints">0</div>
+                        </div>
+                    </div>
+
+                    <div class="leaderboard-container">
+                        <div class="leaderboard-title">🏆 Ranking Global</div>
+                        <ul class="leaderboard-list" id="leaderboardList">
+                            <!-- Preenchido por JavaScript -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playing Screen -->
+            <div id="playingContent" class="fade-in" style="display: none;">
+                <button class="btn-back" onclick="backToMenu()">← Voltar</button>
+                <div class="card game-container">
+                    <div class="game-progress">
+                        <div class="score-box">
+                            <div class="score-label">Você</div>
+                            <div class="score-value" id="playerScore">0</div>
+                        </div>
+                        <div class="progress-text">
+                            Pergunta <span id="questionNumber">1</span>/<span id="totalQuestions">10</span>
+                        </div>
+                        <div class="score-box">
+                            <div class="score-label">Oponente</div>
+                            <div class="score-value" id="opponentScore">0</div>
+                        </div>
+                    </div>
+
+                    <div class="question-box">
+                        <div class="question-label">Qual é o significado?</div>
+                        <div class="japanese-text" id="questionJp">漢字</div>
+                        <div class="hint-text">Escrita: <span id="questionHint">ひらがな</span></div>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="answerInput" placeholder="Digite a resposta em inglês..." disabled>
+                        <button class="btn btn-primary" id="submitBtn" onclick="submitAnswer()" style="margin-top: 12px;">
+                            Responder
+                        </button>
+                    </div>
+
+                    <div class="feedback" id="feedback"></div>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div id="resultsContent" class="fade-in" style="display: none;">
+                <div class="card results-container">
+                    <div class="results-title" id="resultsTitle">🎉 Você Venceu!</div>
+                    
+                    <div class="results-scores">
+                        <div class="result-score">
+                            <div class="result-score-label">Seus Pontos</div>
+                            <div class="result-score-value" id="finalPlayerScore">0</div>
+                        </div>
+                        <div class="result-score">
+                            <div class="result-score-label">Pontos do Oponente</div>
+                            <div class="result-score-value" id="finalOpponentScore">0</div>
+                        </div>
+                    </div>
+
+                    <div class="result-xp">
+                        <div class="result-xp-label">Experiência Ganha</div>
+                        <div class="result-xp-value">+<span id="xpGained">0</span> XP</div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="backToMenu()">
+                        <span>🎮</span>
+                        <span>Jogar Novamente</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // BASE DE DADOS DE PALAVRAS
+        const QUESTIONS = [
+            { jp: 'りんご', en: 'apple', hiragana: 'り・ん・ご', level: 1 },
+            { jp: 'ねこ', en: 'cat', hiragana: 'ね・こ', level: 1 },
+            { jp: 'いぬ', en: 'dog', hiragana: 'い・ぬ', level: 1 },
+            { jp: 'すし', en: 'sushi', hiragana: 'す・し', level: 2 },
+            { jp: '学校', en: 'school', hiragana: 'がっこう', level: 3 },
+            { jp: '友達', en: 'friend', hiragana: 'ともだち', level: 3 },
+            { jp: 'テレビ', en: 'television', hiragana: 'テ・レ・ビ', level: 2 },
+            { jp: 'パソコン', en: 'computer', hiragana: 'パ・ソ・コ・ン', level: 2 },
+            { jp: 'コーヒー', en: 'coffee', hiragana: 'コ・ー・ヒ・ー', level: 2 },
+            { jp: 'オレンジ', en: 'orange', hiragana: 'オ・レ・ン・ジ', level: 2 },
+            { jp: '赤', en: 'red', hiragana: 'あか', level: 1 },
+            { jp: '青', en: 'blue', hiragana: 'あお', level: 1 },
+            { jp: '黄色', en: 'yellow', hiragana: 'きいろ', level: 2 },
+            { jp: '水', en: 'water', hiragana: 'みず', level: 1 },
+            { jp: '火', en: 'fire', hiragana: 'ひ', level: 1 },
+            { jp: '木', en: 'tree', hiragana: 'き', level: 1 },
+            { jp: '山', en: 'mountain', hiragana: 'やま', level: 1 },
+            { jp: '川', en: 'river', hiragana: 'かわ', level: 1 },
+            { jp: '日本', en: 'japan', hiragana: 'にほん', level: 2 },
+            { jp: '人', en: 'person', hiragana: 'ひと', level: 1 },
+            { jp: 'あめ', en: 'candy', hiragana: 'あ・め', level: 1 },
+            { jp: 'パン', en: 'bread', hiragana: 'パ・ン', level: 1 },
+            { jp: '牛乳', en: 'milk', hiragana: 'ぎゅうにゅう', level: 2 },
+            { jp: 'トマト', en: 'tomato', hiragana: 'ト・マ・ト', level: 2 },
+            { jp: 'バナナ', en: 'banana', hiragana: 'バ・ナ・ナ', level: 2 },
+            { jp: '卵', en: 'egg', hiragana: 'たまご', level: 2 },
+            { jp: '肉', en: 'meat', hiragana: 'にく', level: 2 },
+            { jp: '魚', en: 'fish', hiragana: 'さかな', level: 2 },
+            { jp: 'ご飯', en: 'rice', hiragana: 'ごはん', level: 2 },
+            { jp: '醤油', en: 'soy sauce', hiragana: 'しょうゆ', level: 3 },
+            { jp: '塩', en: 'salt', hiragana: 'しお', level: 2 },
+            { jp: '砂糖', en: 'sugar', hiragana: 'さとう', level: 2 },
+            { jp: 'スプーン', en: 'spoon', hiragana: 'ス・プ・ー・ン', level: 2 },
+            { jp: 'フォーク', en: 'fork', hiragana: 'フ・ォ・ー・ク', level: 2 },
+            { jp: 'ナイフ', en: 'knife', hiragana: 'ナ・イ・フ', level: 2 },
+            { jp: 'お椀', en: 'bowl', hiragana: 'おわん', level: 2 },
+            { jp: 'お皿', en: 'dish', hiragana: 'おさら', level: 2 },
+            { jp: 'コップ', en: 'cup', hiragana: 'コ・ッ・プ', level: 2 },
+            { jp: 'ビール', en: 'beer', hiragana: 'ビ・ー・ル', level: 2 },
+            { jp: 'ワイン', en: 'wine', hiragana: 'ワ・イ・ン', level: 2 },
+            { jp: '紅茶', en: 'black tea', hiragana: 'こうちゃ', level: 3 },
+            { jp: '緑茶', en: 'green tea', hiragana: 'りょくちゃ', level: 3 },
+            { jp: 'ラッパ', en: 'trumpet', hiragana: 'ラ・ッ・パ', level: 3 },
+            { jp: 'ピアノ', en: 'piano', hiragana: 'ピ・ア・ノ', level: 2 },
+            { jp: 'ギター', en: 'guitar', hiragana: 'ギ・タ・ー', level: 2 },
+            { jp: 'バイオリン', en: 'violin', hiragana: 'バ・イ・オ・リ・ン', level: 3 },
+            { jp: 'ドラム', en: 'drum', hiragana: 'ド・ラ・ム', level: 2 },
+            { jp: '本', en: 'book', hiragana: 'ほん', level: 1 },
+            { jp: 'ペン', en: 'pen', hiragana: 'ペ・ン', level: 1 },
+            { jp: '鉛筆', en: 'pencil', hiragana: 'えんぴつ', level: 2 },
+            { jp: '消しゴム', en: 'eraser', hiragana: 'けしゴム', level: 2 }
+        ];
+
+        // ESTADO GLOBAL
+        let currentUser = null;
+        let gameState = null;
+        let allUsers = [];
+
+        // INICIALIZAÇÃO
+        window.onload = function() {
+            loadUsers();
+            loadCurrentUser();
+        };
+
+        // FUNÇÕES DE STORAGE
+        function loadUsers() {
+            const data = localStorage.getItem('nihongo_users');
+            allUsers = data ? JSON.parse(data) : [];
+        }
+
+        function saveUsers() {
+            localStorage.setItem('nihongo_users', JSON.stringify(allUsers));
+        }
+
+        function loadCurrentUser() {
+            const data = localStorage.getItem('nihongo_currentUser');
+            if (data) {
+                currentUser = JSON.parse(data);
+                showGameScreen();
+            } else {
+                showAuthScreen();
+            }
+        }
+
+        function saveCurrentUser() {
+            localStorage.setItem('nihongo_currentUser', JSON.stringify(currentUser));
+            const idx = allUsers.findIndex(u => u.id === currentUser.id);
+            if (idx >= 0) {
+                allUsers[idx] = currentUser;
+                saveUsers();
+            }
+        }
+
+        // AUTENTICAÇÃO
+        function toggleAuthMode() {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            const subtitle = document.getElementById('authSubtitle');
+            const error = document.getElementById('errorMessage');
+
+            loginForm.style.display = loginForm.style.display === 'none' ? 'block' : 'none';
+            signupForm.style.display = signupForm.style.display === 'none' ? 'block' : 'none';
+            subtitle.textContent = loginForm.style.display === 'block' ? 'Faça login para continuar' : 'Crie sua conta e comece a aprender';
+            error.classList.remove('show');
+        }
+
+        function showError(message) {
+            const error = document.getElementById('errorMessage');
+            error.textContent = message;
+            error.classList.add('show');
+            setTimeout(() => error.classList.remove('show'), 3000);
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            if (!email || !password) {
+                showError('Email e senha são obrigatórios');
+                return;
+            }
+
+            const user = allUsers.find(u => u.email === email && u.password === password);
+            if (!user) {
+                showError('Email ou senha incorretos');
+                return;
+            }
+
+            currentUser = user;
+            saveCurrentUser();
+            showGameScreen();
+        }
+
+        function handleSignup() {
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+            const confirm = document.getElementById('signupConfirm').value.trim();
+
+            if (!name || !email || !password || !confirm) {
+                showError('Todos os campos são obrigatórios');
+                return;
+            }
+
+            if (password !== confirm) {
+                showError('As senhas não coincidem');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('A senha deve ter pelo menos 6 caracteres');
+                return;
+            }
+
+            if (allUsers.some(u => u.email === email)) {
+                showError('Este email já está cadastrado');
+                return;
+            }
+
+            currentUser = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                password: password,
+                level: 1,
+                wins: 0,
+                losses: 0,
+                totalPoints: 0,
+                createdAt: new Date().toISOString()
+            };
+
+            allUsers.push(currentUser);
+            saveUsers();
+            saveCurrentUser();
+            showGameScreen();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('nihongo_currentUser');
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('signupName').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupPassword').value = '';
+            document.getElementById('signupConfirm').value = '';
+            showAuthScreen();
+        }
+
+        // TELAS
+        function showAuthScreen() {
+            document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('gameScreen').style.display = 'none';
+        }
+
+        function showGameScreen() {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            updateMenuScreen();
+        }
+
+        function updateMenuScreen() {
+            document.getElementById('welcomeName').textContent = currentUser.name;
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('welcomePoints').textContent = currentUser.totalPoints;
+            document.getElementById('statsWins').textContent = currentUser.wins;
+            document.getElementById('statsLosses').textContent = currentUser.losses;
+            document.getElementById('statsTotalPoints').textContent = currentUser.totalPoints;
+            document.getElementById('userLevel').textContent = 'Nível ' + (Math.floor(currentUser.totalPoints / 100) + 1);
+
+            updateLeaderboard();
+            backToMenu();
+        }
+
+        function updateLeaderboard() {
+            const sorted = [...allUsers].sort((a, b) => b.totalPoints - a.totalPoints).slice(0, 5);
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = sorted.map((user, idx) => `
+                <li class="leaderboard-item">
+                    <div class="leaderboard-rank">#${idx + 1}</div>
+                    <div class="leaderboard-name">${user.name}</div>
+                    <div class="leaderboard-points">${user.totalPoints.toLocaleString()}</div>
+                </li>
+            `).join('');
+        }
+
+        function backToMenu() {
+            document.getElementById('menuContent').style.display = 'block';
+            document.getElementById('playingContent').style.display = 'none';
+            document.getElementById('resultsContent').style.display = 'none';
+        }
+
+        // JOGO
+        function startGame(mode) {
+            gameState = {
+                mode: mode,
+                playerScore: 0,
+                opponentScore: 0,
+                currentQuestionIndex: 0,
+                totalQuestions: 10,
+                answered: false,
+                questions: [...QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 10)
+            };
+
+            document.getElementById('menuContent').style.display = 'none';
+            document.getElementById('playingContent').style.display = 'block';
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = gameState.questions[gameState.currentQuestionIndex];
+            document.getElementById('questionJp').textContent = q.jp;
+            document.getElementById('questionHint').textContent = q.hiragana;
+            document.getElementById('questionNumber').textContent = gameState.currentQuestionIndex + 1;
+            document.getElementById('totalQuestions').textContent = gameState.totalQuestions;
+            document.getElementById('playerScore').textContent = gameState.playerScore;
+            document.getElementById('opponentScore').textContent = gameState.opponentScore;
+
+            const input = document.getElementById('answerInput');
+            input.disabled = false;
+            input.value = '';
+            input.focus();
+
+            const feedback = document.getElementById('feedback');
+            feedback.classList.remove('show', 'correct', 'incorrect');
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.textContent = 'Responder';
+            submitBtn.disabled = false;
+
+            gameState.answered = false;
+        }
+
+        function submitAnswer() {
+            if (gameState.answered) return;
+
+            const input = document.getElementById('answerInput');
+            const answer = input.value.trim().toLowerCase();
+            const correctAnswer = gameState.questions[gameState.currentQuestionIndex].en.toLowerCase();
+
+            const isCorrect = answer === correctAnswer;
+
+            if (isCorrect) {
+                gameState.playerScore += 10;
+                showFeedback('✓ Correto! +10 pontos', 'correct');
+            } else {
+                showFeedback(`✗ Errado! A resposta era: ${correctAnswer}`, 'incorrect');
+            }
+
+            // Simular resposta do oponente
+            setTimeout(() => {
+                if (gameState.mode === 'ai') {
+                    // IA tem 60% de chance de acertar
+                    if (Math.random() < 0.6) {
+                        gameState.opponentScore += 10;
+                    }
+                } else {
+                    // Multiplayer: outro jogador (simulado)
+                    if (Math.random() < 0.5) {
+                        gameState.opponentScore += 10;
+                    }
+                }
+
+                gameState.answered = true;
+                input.disabled = true;
+
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.textContent = 'Próxima pergunta';
+                submitBtn.disabled = false;
+
+                if (gameState.currentQuestionIndex < gameState.totalQuestions - 1) {
+                    submitBtn.onclick = nextQuestion;
+                } else {
+                    submitBtn.onclick = endGame;
+                }
+            }, 500);
+        }
+
+        function showFeedback(message, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.className = 'feedback show ' + type;
+        }
+
+        function nextQuestion() {
+            gameState.currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        function endGame() {
+            const won = gameState.playerScore > gameState.opponentScore;
+            const xp = gameState.playerScore;
+
+            currentUser.totalPoints += xp;
+            if (won) {
+                currentUser.wins++;
+            } else {
+                currentUser.losses++;
+            }
+            currentUser.level = Math.floor(currentUser.totalPoints / 100) + 1;
+
+            saveCurrentUser();
+
+            document.getElementById('resultsTitle').textContent = 
+                won ? '🎉 Você Venceu!' : gameState.playerScore === gameState.opponentScore ? '🤝 Empate!' : '😢 Você Perdeu';
+            document.getElementById('finalPlayerScore').textContent = gameState.playerScore;
+            document.getElementById('finalOpponentScore').textContent = gameState.opponentScore;
+            document.getElementById('xpGained').textContent = xp;
+
+            document.getElementById('playingContent').style.display = 'none';
+            document.getElementById('resultsContent').style.display = 'block';
+        }
+
+        // ENTER KEY
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleLogin();
+            });
+            document.getElementById('signupConfirm').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleSignup();
+            });
+            document.getElementById('answerInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !gameState.answered) submitAnswer();
+            });
+        });
+    </script>
+</body>
+</html>
