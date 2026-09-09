@@ -1,0 +1,9 @@
+{
+  "name": "CIL Recanto Japonês",
+  "short_name": "CIL Japonês",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9f8fd",
+  "theme_color": "#6553dc",
+  "description": "Plataforma escolar para aprender japonês."
+}
