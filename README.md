@@ -21,3 +21,12 @@ criado automaticamente em `data/nihongo.db` e não deve ser enviado ao Git.
 - sessão persistida em cookie `HttpOnly` por 14 dias;
 - login, logout e recuperação automática da sessão;
 - progresso, sequência diária e itens errados gravados no SQLite por usuário.
+
+## Trilha de longo prazo
+
+A seção **Trilha completa** apresenta marcos do pré-N5 até além do JLPT N1,
+incluindo hiragana/katakana, gramática, kanji, leitura, escuta, conversação,
+escrita, japonês profissional e imersão. O sistema grava a conclusão de cada
+marco por conta. A trilha é uma orientação para vários anos de estudo: fluência
+exige prática consistente com conteúdo real e interação humana, não apenas uso
+do aplicativo.

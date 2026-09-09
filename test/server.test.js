@@ -47,6 +47,14 @@ test('cria uma conta, salva o progresso e encerra a sessão', async () => {
   assert.equal(progress.status, 200);
   assert.deepEqual((await progress.json()).user.errors, [2]);
 
+  const roadmap = await request('/api/curriculum', { headers: { Cookie: cookie } });
+  assert.equal(roadmap.status, 200);
+  assert.equal((await roadmap.json()).curriculum.length, 7);
+
+  const completed = await request('/api/lessons/hiragana/complete', { method: 'POST', headers: { Cookie: cookie } });
+  assert.equal(completed.status, 200);
+  assert.deepEqual((await completed.json()).completedLessons, ['hiragana']);
+
   const logout = await request('/api/auth/logout', { method: 'POST', headers: { Cookie: cookie } });
   assert.equal(logout.status, 200);
 

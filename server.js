@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
+const { CURRICULUM, LESSON_IDS } = require('./curriculum');
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = __dirname;
@@ -30,6 +31,12 @@ db.exec(`
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     expires_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS lesson_progress (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    lesson_id TEXT NOT NULL,
+    completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, lesson_id)
+  );
 `);
 
 const q = {
@@ -41,6 +48,8 @@ const q = {
   deleteSession: db.prepare('DELETE FROM sessions WHERE token_hash = ?'),
   updateProgress: db.prepare('UPDATE users SET correct = ?, total = ?, errors_json = ?, streak = ?, last_day = ? WHERE id = ?'),
   cleanSessions: db.prepare('DELETE FROM sessions WHERE expires_at <= ?'),
+  completedLessons: db.prepare('SELECT lesson_id FROM lesson_progress WHERE user_id = ? ORDER BY completed_at'),
+  completeLesson: db.prepare('INSERT OR IGNORE INTO lesson_progress (user_id, lesson_id) VALUES (?, ?)'),
 };
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
@@ -53,9 +62,8 @@ function verifyPassword(password, stored) {
   return crypto.timingSafeEqual(Buffer.from(actual, 'hex'), Buffer.from(expected, 'hex'));
 }
 function hashToken(token) { return crypto.createHash('sha256').update(token).digest('hex'); }
-function publicUser(user) {
-  return { id: user.id, name: user.name, email: user.email, correct: user.correct, total: user.total, errors: JSON.parse(user.errors_json || '[]'), streak: user.streak, lastDay: user.last_day };
-}
+function completedLessons(userId) { return q.completedLessons.all(userId).map(row => row.lesson_id); }
+function publicUser(user) { return { id: user.id, name: user.name, email: user.email, correct: user.correct, total: user.total, errors: JSON.parse(user.errors_json || '[]'), streak: user.streak, lastDay: user.last_day, completedLessons: completedLessons(user.id) }; }
 function json(res, status, body, headers = {}) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', ...headers });
   res.end(JSON.stringify(body));
@@ -125,6 +133,22 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/auth/session') {
       const user = currentUser(req);
       return user ? json(res, 200, { user: publicUser(user) }) : json(res, 401, { error: 'Sessão não encontrada.' });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/curriculum') {
+      const user = currentUser(req);
+      if (!user) return json(res, 401, { error: 'Faça login para acessar a trilha.' });
+      return json(res, 200, { curriculum: CURRICULUM, completedLessons: completedLessons(user.id) });
+    }
+
+    const lessonMatch = url.pathname.match(/^\/api\/lessons\/([a-z0-9-]+)\/complete$/);
+    if (req.method === 'POST' && lessonMatch) {
+      const user = currentUser(req);
+      if (!user) return json(res, 401, { error: 'Faça login para concluir uma aula.' });
+      const lessonId = lessonMatch[1];
+      if (!LESSON_IDS.has(lessonId)) return json(res, 404, { error: 'Aula não encontrada na trilha.' });
+      q.completeLesson.run(user.id, lessonId);
+      return json(res, 200, { completedLessons: completedLessons(user.id) });
     }
 
     if (req.method === 'PATCH' && url.pathname === '/api/me/progress') {
