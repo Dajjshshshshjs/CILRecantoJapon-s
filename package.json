@@ -1,0 +1,13 @@
+{
+  "name": "nihongo-study-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Aplicação de estudo de hiragana com autenticação e progresso persistente.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/server.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
