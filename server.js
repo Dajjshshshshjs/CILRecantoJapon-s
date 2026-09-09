@@ -9,6 +9,7 @@ const PORT = Number(process.env.PORT || 3000);
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, 'data');
 const DB_PATH = path.join(DATA_DIR, 'nihongo.db');
+const OWNER_NAME = 'Davi Rubbo Noronha';
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const db = new DatabaseSync(DB_PATH);
@@ -59,6 +60,9 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 `);
+// O proprietário definido pelo CIL nunca perde o acesso administrativo, mesmo
+// após atualizações do banco ou alterações feitas por outros administradores.
+db.prepare("UPDATE users SET role = 'admin', approval_status = 'approved' WHERE name = ?").run(OWNER_NAME);
 
 const q = {
   insertUser: db.prepare('INSERT INTO users (name, email, password_hash, role, approval_status, semester, classroom, profile_photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
@@ -105,6 +109,7 @@ function hashToken(token) { return crypto.createHash('sha256').update(token).dig
 function completedLessons(userId) { return q.completedLessons.all(userId).map(row => row.lesson_id); }
 function publicUser(user) { return { id: user.id, name: user.name, email: user.email, role: user.role, approvalStatus: user.approval_status, semester: user.semester, classroom: user.classroom, profilePhoto: user.profile_photo, rejectionReason: user.rejection_reason, correct: user.correct, total: user.total, errors: JSON.parse(user.errors_json || '[]'), streak: user.streak, lastDay: user.last_day, completedLessons: completedLessons(user.id) }; }
 function requireAdmin(req, res) { const user = currentUser(req); if (!user || user.role !== 'admin') { json(res, 403, { error: 'Acesso exclusivo do administrador.' }); return null; } return user; }
+function isOwner(user) { return user?.name === OWNER_NAME; }
 function audit(actor, action, entityType, entityId = '', details = {}) { q.addAudit.run(actor?.id || null, action, entityType, String(entityId), JSON.stringify(details)); }
 function json(res, status, body, headers = {}) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', ...headers });
@@ -198,6 +203,17 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname.startsWith('/api/admin/')) {
       const admin = requireAdmin(req, res); if (!admin) return;
+      const panelAccessMatch = url.pathname.match(/^\/api\/admin\/panel-access\/(\d+)\/(grant|revoke)$/);
+      if (req.method === 'POST' && panelAccessMatch) {
+        if (!isOwner(admin)) return json(res, 403, { error: 'Somente Davi Rubbo Noronha pode conceder ou retirar acessos administrativos.' });
+        const [, id, action] = panelAccessMatch;
+        const target = q.userById.get(Number(id));
+        if (!target) return json(res, 404, { error: 'Usuário não encontrado.' });
+        if (target.name === OWNER_NAME && action === 'revoke') return json(res, 403, { error: 'A conta de Davi Rubbo Noronha é protegida e não pode perder o acesso administrativo.' });
+        db.prepare('UPDATE users SET role = ? WHERE id = ?').run(action === 'grant' ? 'admin' : 'student', target.id);
+        audit(admin, action === 'grant' ? 'admin_access_granted' : 'admin_access_revoked', 'user', target.id, { target: target.name });
+        return json(res, 200, { ok: true });
+      }
       if (req.method === 'GET' && url.pathname === '/api/admin/dashboard') { const students = q.listUsers.all(); return json(res, 200, { students, books: q.listBooks.all(99), videos: q.listVideos.all(99), achievements: q.listAchievements.all(), rules: q.setting.get('rules')?.value || '', audit: q.recentAudit.all(), insight: students.map(s => ({ id:s.id, name:s.name, signal:s.total ? `${Math.round(s.correct / s.total * 100)}% de acertos em ${s.total} respostas` : 'Ainda sem atividade', recommendation:s.total && s.correct / s.total < .6 ? 'Sugira revisão e prática fácil.' : 'Pronto para novos desafios.' })) }); }
       if (req.method === 'POST' && url.pathname === '/api/admin/books') { const {title='',author='',description='',url='',semester}=await readBody(req); if(!title.trim()||!author.trim()||!Number.isInteger(semester)) return json(res,400,{error:'Preencha título, autor e semestre.'}); const result=q.addBook.run(title.trim(),author.trim(),description.trim(),url.trim(),semester); audit(admin,'book_created','book',result.lastInsertRowid,{title,semester}); return json(res,201,{ok:true}); }
       if (req.method === 'POST' && url.pathname === '/api/admin/videos') { const {title='',url='',description='',semester}=await readBody(req); if(!title.trim()||!/^https?:\/\//.test(url)||!Number.isInteger(semester)) return json(res,400,{error:'Informe título, link de vídeo e semestre.'}); const result=q.addVideo.run(title.trim(),url.trim(),description.trim(),semester); audit(admin,'video_created','video',result.lastInsertRowid,{title,semester}); return json(res,201,{ok:true}); }
