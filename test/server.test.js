@@ -7,6 +7,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const port = 3100;
 let server;
+const photo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL00AAAAABJRU5ErkJggg==';
 
 function request(pathname, options = {}) {
   return fetch(`http://127.0.0.1:${port}${pathname}`, options);
@@ -33,7 +34,7 @@ test('cria uma conta, salva o progresso e encerra a sessão', async () => {
   const signup = await request('/api/auth/signup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'Ana Silva', email: 'ana@example.com', password: 'senha-segura' }),
+    body: JSON.stringify({ name: 'Ana Silva', email: 'ana@example.com', password: 'senha-segura', semester: 1, classroom: '1º A', profilePhoto: photo }),
   });
   assert.equal(signup.status, 201);
   const cookie = signup.headers.get('set-cookie').split(';')[0];
@@ -65,11 +66,11 @@ test('cria uma conta, salva o progresso e encerra a sessão', async () => {
 test('impede senha fraca e e-mail duplicado', async () => {
   const weak = await request('/api/auth/signup', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'João', email: 'joao@example.com', password: '123' }),
+    body: JSON.stringify({ name: 'João', email: 'joao@example.com', password: '123', semester: 1, classroom: '1º A', profilePhoto: photo }),
   });
   assert.equal(weak.status, 400);
 
-  const valid = { name: 'João', email: 'joao@example.com', password: 'senha-segura' };
+  const valid = { name: 'João', email: 'joao@example.com', password: 'senha-segura', semester: 1, classroom: '1º A', profilePhoto: photo };
   assert.equal((await request('/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(valid) })).status, 201);
   assert.equal((await request('/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(valid) })).status, 409);
 });
