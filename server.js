@@ -110,6 +110,17 @@ db.exec(`
   );
 `);
 
+// Remove dados de foto que podem existir em bancos criados antes da remoção
+// do upload no cadastro. A migração é executada apenas uma vez por banco.
+const hasLegacyProfilePhoto = db
+  .prepare('PRAGMA table_info(users)')
+  .all()
+  .some(column => column.name === 'profile_photo');
+
+if (hasLegacyProfilePhoto) {
+  db.exec('ALTER TABLE users DROP COLUMN profile_photo');
+}
+
 // O proprietário definido pelo CIL nunca perde o acesso administrativo.
 db.prepare(
   "UPDATE users SET role = 'admin', approval_status = 'approved' WHERE name = ?"
@@ -1627,6 +1638,6 @@ server.listen(
   PORT,
   () =>
     console.log(
-      `Nihongo disponível em http://localhost:${PORT}`
+      `CILRECANTOJAPONÊS disponível em http://localhost:${PORT}`
     )
 );

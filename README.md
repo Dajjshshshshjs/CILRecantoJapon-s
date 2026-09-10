@@ -1,4 +1,4 @@
-# Nihongo
+# CILRECANTOJAPONÊS
 
 Aplicação de estudo de hiragana com conta de aluno, login seguro, logout e
 progresso salvo em SQLite.
