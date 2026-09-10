@@ -32,7 +32,6 @@ db.exec(`
     approval_status TEXT NOT NULL DEFAULT 'pending',
     semester INTEGER NOT NULL DEFAULT 1,
     classroom TEXT NOT NULL DEFAULT '',
-    profile_photo TEXT NOT NULL DEFAULT '',
     rejection_reason TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
@@ -118,7 +117,7 @@ db.prepare(
 
 const q = {
   insertUser: db.prepare(
-    'INSERT INTO users (name, email, password_hash, role, approval_status, semester, classroom, profile_photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO users (name, email, password_hash, role, approval_status, semester, classroom) VALUES (?, ?, ?, ?, ?, ?, ?)'
   ),
 
   userCount: db.prepare(
@@ -281,10 +280,6 @@ function publicUser(user) {
     approvalStatus: user.approval_status,
     semester: user.semester,
     classroom: user.classroom,
-
-    // Foto continua opcional.
-    // Se não existir, retorna string vazia.
-    profilePhoto: user.profile_photo || '',
 
     rejectionReason: user.rejection_reason,
     correct: user.correct,
@@ -501,22 +496,6 @@ const server =
           );
         }
 
-        /*
-         * =========================================================
-         * CADASTRO
-         * =========================================================
-         *
-         * A FOTO DE PERFIL É OPCIONAL.
-         *
-         * O usuário pode:
-         * 1. Não enviar foto;
-         * 2. Enviar JPG;
-         * 3. Enviar PNG;
-         * 4. Enviar WEBP.
-         *
-         * Se não enviar, profilePhoto será ''.
-         */
-
         if (
           req.method === 'POST' &&
           url.pathname ===
@@ -527,8 +506,7 @@ const server =
             email = '',
             password = '',
             semester,
-            classroom = '',
-            profilePhoto = ''
+            classroom = ''
           } = await readBody(req);
 
           if (
@@ -583,37 +561,6 @@ const server =
             });
           }
 
-          /*
-           * =====================================================
-           * FOTO OPCIONAL
-           * =====================================================
-           *
-           * NÃO existe mais nenhuma exigência para enviar foto.
-           *
-           * Se profilePhoto estiver vazio:
-           *    cadastro continua normalmente.
-           *
-           * Se profilePhoto existir:
-           *    precisa ser JPG, PNG ou WEBP
-           *    e ter até aproximadamente 2 MB.
-           */
-
-          if (
-            profilePhoto &&
-            (
-              !/^data:image\/(jpeg|png|webp);base64,/.test(
-                profilePhoto
-              ) ||
-              profilePhoto.length >
-                2_700_000
-            )
-          ) {
-            return json(res, 400, {
-              error:
-                'A foto deve estar em JPG, PNG ou WEBP e ter até 2 MB.'
-            });
-          }
-
           if (
             q.userByEmail.get(
               email
@@ -644,11 +591,7 @@ const server =
                 ? 'approved'
                 : 'pending',
               semester,
-              classroom.trim(),
-
-              // FOTO OPCIONAL:
-              // se não houver, grava ''.
-              profilePhoto || ''
+              classroom.trim()
             );
 
           const user =
@@ -667,12 +610,7 @@ const server =
               semester,
               classroom:
                 classroom.trim(),
-              status:
-                user.approval_status,
-              photo:
-                profilePhoto
-                  ? 'provided'
-                  : 'not_provided'
+              status: user.approval_status
             }
           );
 

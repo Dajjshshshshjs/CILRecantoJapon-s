@@ -7,8 +7,6 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const port = 3100;
 let server;
-const photo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL00AAAAABJRU5ErkJggg==';
-
 function request(pathname, options = {}) {
   return fetch(`http://127.0.0.1:${port}${pathname}`, options);
 }
@@ -30,11 +28,11 @@ after(() => {
   fs.rmSync(path.join(root, 'data'), { recursive: true, force: true });
 });
 
-test('cria uma conta, salva o progresso e encerra a sessão', async () => {
+test('cria uma conta sem foto de perfil, salva o progresso e encerra a sessão', async () => {
   const signup = await request('/api/auth/signup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'Ana Silva', email: 'ana@example.com', password: 'senha-segura', semester: 1, classroom: '1º A', profilePhoto: photo }),
+    body: JSON.stringify({ name: 'Ana Silva', email: 'ana@example.com', password: 'senha-segura', semester: 1, classroom: '1º A' }),
   });
   assert.equal(signup.status, 201);
   const cookie = signup.headers.get('set-cookie').split(';')[0];
@@ -66,11 +64,11 @@ test('cria uma conta, salva o progresso e encerra a sessão', async () => {
 test('impede senha fraca e e-mail duplicado', async () => {
   const weak = await request('/api/auth/signup', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'João', email: 'joao@example.com', password: '123', semester: 1, classroom: '1º A', profilePhoto: photo }),
+    body: JSON.stringify({ name: 'João', email: 'joao@example.com', password: '123', semester: 1, classroom: '1º A' }),
   });
   assert.equal(weak.status, 400);
 
-  const valid = { name: 'João', email: 'joao@example.com', password: 'senha-segura', semester: 1, classroom: '1º A', profilePhoto: photo };
+  const valid = { name: 'João', email: 'joao@example.com', password: 'senha-segura', semester: 1, classroom: '1º A' };
   assert.equal((await request('/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(valid) })).status, 201);
   assert.equal((await request('/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(valid) })).status, 409);
 });

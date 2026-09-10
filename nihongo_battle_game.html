@@ -51,9 +51,6 @@
 
         <label for="classroom">Turma</label>
         <input id="classroom" placeholder="Ex.: 1º A">
-
-        <label for="profilePhoto">Foto de rosto <span style="font-weight:500;color:var(--muted)">(opcional)</span></label>
-        <input id="profilePhoto" type="file" accept="image/jpeg,image/png,image/webp">
       </div>
 
       <button class="btn btn-primary" id="authButton" onclick="enterApp()">Começar a aprender →</button>
@@ -179,35 +176,6 @@ function toggleAuth(){
     isLogin?'current-password':'new-password';
 }
 
-/*
- * FOTO OPCIONAL
- *
- * Se o usuário não escolher uma foto:
- * retorna uma string vazia e o cadastro continua.
- *
- * Se escolher uma foto:
- * transforma a imagem em Data URL normalmente.
- */
-function photoData(file){
-  return new Promise((resolve,reject)=>{
-    if(!file){
-      return resolve('');
-    }
-
-    const reader=new FileReader();
-
-    reader.onload=()=>{
-      resolve(reader.result);
-    };
-
-    reader.onerror=()=>{
-      reject(new Error('Não foi possível ler a foto.'));
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
 async function enterApp(){
   const email=document.getElementById('email').value.trim();
   const name=document.getElementById('name').value.trim();
@@ -239,10 +207,7 @@ async function enterApp(){
           email,
           password,
           semester:Number(document.getElementById('semester').value),
-          classroom:document.getElementById('classroom').value.trim(),
-          profilePhoto:await photoData(
-            document.getElementById('profilePhoto').files[0]
-          )
+          classroom:document.getElementById('classroom').value.trim()
         };
 
     const result=await api(endpoint,{

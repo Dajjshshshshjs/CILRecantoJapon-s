@@ -16,7 +16,7 @@ criado automaticamente em `data/nihongo.db` e não deve ser enviado ao Git.
 
 ## Recursos de conta
 
-- criação de conta com validação de e-mail e senha de no mínimo 8 caracteres;
+- criação de conta sem necessidade de foto de perfil, com validação de e-mail e senha de no mínimo 8 caracteres;
 - senha derivada com `scrypt` e comparação em tempo constante;
 - sessão persistida em cookie `HttpOnly` por 14 dias;
 - login, logout e recuperação automática da sessão;
