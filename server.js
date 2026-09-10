@@ -1689,6 +1689,6 @@ server.listen(
   PORT,
   () =>
     console.log(
-      `Nihongo disponível em http://localhost:${PORT}`
+      `CILRECANTOJAPONÊS disponível em http://localhost:${PORT}`
     )
 );

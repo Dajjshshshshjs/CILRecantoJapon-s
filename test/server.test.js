@@ -17,7 +17,7 @@ before(async () => {
   await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Servidor não iniciou.')), 5000);
     server.stdout.on('data', output => {
-      if (output.toString().includes('Nihongo disponível')) { clearTimeout(timeout); resolve(); }
+      if (output.toString().includes('CILRECANTOJAPONÊS disponível')) { clearTimeout(timeout); resolve(); }
     });
     server.on('error', reject);
   });
