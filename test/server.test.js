@@ -3,6 +3,7 @@ const { after, before, test } = require('node:test');
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { DatabaseSync } = require('node:sqlite');
 
 const root = path.resolve(__dirname, '..');
 const port = 3100;
@@ -13,6 +14,29 @@ function request(pathname, options = {}) {
 
 before(async () => {
   fs.rmSync(path.join(root, 'data'), { recursive: true, force: true });
+  fs.mkdirSync(path.join(root, 'data'), { recursive: true });
+  const legacyDatabase = new DatabaseSync(path.join(root, 'data', 'nihongo.db'));
+  legacyDatabase.exec(`
+    CREATE TABLE users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      password_hash TEXT NOT NULL,
+      correct INTEGER NOT NULL DEFAULT 0,
+      total INTEGER NOT NULL DEFAULT 0,
+      errors_json TEXT NOT NULL DEFAULT '[]',
+      streak INTEGER NOT NULL DEFAULT 0,
+      last_day TEXT NOT NULL DEFAULT '',
+      role TEXT NOT NULL DEFAULT 'student',
+      approval_status TEXT NOT NULL DEFAULT 'pending',
+      semester INTEGER NOT NULL DEFAULT 1,
+      classroom TEXT NOT NULL DEFAULT '',
+      profile_photo TEXT NOT NULL DEFAULT '',
+      rejection_reason TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  legacyDatabase.close();
   server = spawn(process.execPath, ['server.js'], { cwd: root, env: { ...process.env, PORT: String(port) } });
   await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Servidor não iniciou.')), 5000);
@@ -59,6 +83,14 @@ test('cria uma conta sem foto de perfil, salva o progresso e encerra a sessão',
 
   const session = await request('/api/auth/session', { headers: { Cookie: cookie } });
   assert.equal(session.status, 401);
+});
+
+test('remove a coluna de foto dos bancos existentes', () => {
+  const database = new DatabaseSync(path.join(root, 'data', 'nihongo.db'));
+  const columns = database.prepare('PRAGMA table_info(users)').all();
+  database.close();
+
+  assert.equal(columns.some(column => column.name === 'profile_photo'), false);
 });
 
 test('impede senha fraca e e-mail duplicado', async () => {
