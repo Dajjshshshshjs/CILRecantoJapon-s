@@ -7,6 +7,7 @@ const { DatabaseSync } = require('node:sqlite');
 
 const root = path.resolve(__dirname, '..');
 const port = 3100;
+const ownerEmail = 'davi.rubbo@example.com';
 let server;
 function request(pathname, options = {}) {
   return fetch(`http://127.0.0.1:${port}${pathname}`, options);
@@ -37,7 +38,7 @@ before(async () => {
     );
   `);
   legacyDatabase.close();
-  server = spawn(process.execPath, ['server.js'], { cwd: root, env: { ...process.env, PORT: String(port) } });
+  server = spawn(process.execPath, ['server.js'], { cwd: root, env: { ...process.env, PORT: String(port), ADMIN_OWNER_EMAIL: ownerEmail } });
   await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Servidor não iniciou.')), 5000);
     server.stdout.on('data', output => {
@@ -60,7 +61,12 @@ test('cria uma conta sem foto de perfil, salva o progresso e encerra a sessão',
   });
   assert.equal(signup.status, 201);
   const cookie = signup.headers.get('set-cookie').split(';')[0];
-  assert.equal((await signup.json()).user.name, 'Ana Silva');
+  const signedUp = await signup.json();
+  assert.equal(signedUp.user.name, 'Ana Silva');
+  assert.equal(signedUp.user.role, 'student');
+
+  const forbiddenAdmin = await request('/api/admin/dashboard', { headers: { Cookie: cookie } });
+  assert.equal(forbiddenAdmin.status, 403);
 
   const progress = await request('/api/me/progress', {
     method: 'PATCH',
@@ -81,6 +87,11 @@ test('cria uma conta sem foto de perfil, salva o progresso e encerra a sessão',
   const logout = await request('/api/auth/logout', { method: 'POST', headers: { Cookie: cookie } });
   assert.equal(logout.status, 200);
 
+  const database = new DatabaseSync(path.join(root, 'data', 'nihongo.db'));
+  const logoutEvent = database.prepare("SELECT actor_id FROM audit_events WHERE action = 'logout' ORDER BY id DESC LIMIT 1").get();
+  database.close();
+  assert.notEqual(logoutEvent.actor_id, null);
+
   const session = await request('/api/auth/session', { headers: { Cookie: cookie } });
   assert.equal(session.status, 401);
 });
@@ -91,6 +102,23 @@ test('remove a coluna de foto dos bancos existentes', () => {
   database.close();
 
   assert.equal(columns.some(column => column.name === 'profile_photo'), false);
+});
+
+test('protege o painel administrativo para a conta de Davi Rubbo', async () => {
+  const signup = await request('/api/auth/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Davi Rubbo Noronha', email: ownerEmail, password: 'senha-segura', semester: 1, classroom: '1º A' }),
+  });
+
+  assert.equal(signup.status, 201);
+  const cookie = signup.headers.get('set-cookie').split(';')[0];
+  const owner = await signup.json();
+  assert.equal(owner.user.role, 'admin');
+  assert.equal(owner.user.approvalStatus, 'approved');
+
+  const dashboard = await request('/api/admin/dashboard', { headers: { Cookie: cookie } });
+  assert.equal(dashboard.status, 200);
 });
 
 test('impede senha fraca e e-mail duplicado', async () => {

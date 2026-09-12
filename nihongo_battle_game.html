@@ -739,8 +739,6 @@ async function showAdmin(){
   try{
     const data=await api('/api/admin/dashboard');
 
-    const owner=user.name==='Davi Rubbo Noronha';
-
     document.getElementById('view').innerHTML=`
       <section class="panel" style="padding:22px">
         <h3>Assistente inteligente de desempenho</h3>
@@ -764,10 +762,7 @@ async function showAdmin(){
 
         <h3>Controle de alunos</h3>
 
-        ${owner
-          ?'<p class="sub">Somente Davi Rubbo Noronha pode alterar quem acessa este painel.</p>'
-          :''
-        }
+        <p class="sub">O painel é protegido e está disponível somente para a conta administrativa configurada.</p>
 
         ${data.students.map(s=>`
           <div style="padding:12px 0;border-top:1px solid var(--line)">
@@ -793,19 +788,6 @@ async function showAdmin(){
               onclick="adminAction(${s.id},'semester')">
               Alterar semestre
             </button>
-
-            ${
-              owner&&s.name!=='Davi Rubbo Noronha'
-              ?`
-                <button class="back"
-                  onclick="panelAccess(${s.id},'${s.role==='admin'?'revoke':'grant'}')">
-                  ${s.role==='admin'
-                    ?'Remover painel'
-                    :'Dar acesso ao painel'}
-                </button>
-              `
-              :''
-            }
           </div>
         `).join('')}
       </section>
@@ -814,29 +796,6 @@ async function showAdmin(){
   }catch(error){
     document.getElementById('view').innerHTML=
       `<div class="empty">${error.message}</div>`;
-  }
-}
-
-async function panelAccess(id,action){
-  if(!confirm(
-    action==='grant'
-      ?'Conceder acesso ao painel administrativo?'
-      :'Retirar acesso ao painel administrativo?'
-  ))return;
-
-  try{
-    await api(
-      '/api/admin/panel-access/'+id+'/'+action,
-      {
-        method:'POST',
-        body:'{}'
-      }
-    );
-
-    showAdmin();
-
-  }catch(error){
-    alert(error.message);
   }
 }
 

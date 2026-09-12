@@ -9,7 +9,9 @@ const PORT = Number(process.env.PORT || 3000);
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, 'data');
 const DB_PATH = path.join(DATA_DIR, 'nihongo.db');
-const OWNER_NAME = 'Davi Rubbo Noronha';
+const ADMIN_OWNER_EMAIL = String(
+  process.env.ADMIN_OWNER_EMAIL || ''
+).trim().toLowerCase();
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
@@ -121,18 +123,21 @@ if (hasLegacyProfilePhoto) {
   db.exec('ALTER TABLE users DROP COLUMN profile_photo');
 }
 
-// O proprietário definido pelo CIL nunca perde o acesso administrativo.
-db.prepare(
-  "UPDATE users SET role = 'admin', approval_status = 'approved' WHERE name = ?"
-).run(OWNER_NAME);
+// Apenas a conta configurada pelo e-mail pode acessar o painel. Associar esse
+// privilégio ao e-mail, em vez do nome, impede que outro aluno se passe pelo dono.
+if (ADMIN_OWNER_EMAIL) {
+  db.prepare(
+    "UPDATE users SET role = 'student' WHERE role = 'admin' AND email <> ?"
+  ).run(ADMIN_OWNER_EMAIL);
+
+  db.prepare(
+    "UPDATE users SET role = 'admin', approval_status = 'approved' WHERE email = ?"
+  ).run(ADMIN_OWNER_EMAIL);
+}
 
 const q = {
   insertUser: db.prepare(
     'INSERT INTO users (name, email, password_hash, role, approval_status, semester, classroom) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ),
-
-  userCount: db.prepare(
-    'SELECT COUNT(*) AS count FROM users'
   ),
 
   userByEmail: db.prepare(
@@ -287,7 +292,7 @@ function publicUser(user) {
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role,
+    role: isOwner(user) ? 'admin' : 'student',
     approvalStatus: user.approval_status,
     semester: user.semester,
     classroom: user.classroom,
@@ -308,7 +313,7 @@ function publicUser(user) {
 function requireAdmin(req, res) {
   const user = currentUser(req);
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role !== 'admin' || !isOwner(user)) {
     json(res, 403, {
       error:
         'Acesso exclusivo do administrador.'
@@ -321,7 +326,8 @@ function requireAdmin(req, res) {
 }
 
 function isOwner(user) {
-  return user?.name === OWNER_NAME;
+  return Boolean(ADMIN_OWNER_EMAIL) &&
+    user?.email?.toLowerCase() === ADMIN_OWNER_EMAIL;
 }
 
 function audit(
@@ -572,33 +578,26 @@ const server =
             });
           }
 
-          if (
-            q.userByEmail.get(
-              email
-                .trim()
-                .toLowerCase()
-            )
-          ) {
+          const normalizedEmail = email.trim().toLowerCase();
+
+          if (q.userByEmail.get(normalizedEmail)) {
             return json(res, 409, {
               error:
                 'Este e-mail já está cadastrado.'
             });
           }
 
-          const isFirstAccount =
-            q.userCount.get().count === 0;
+          const isOwnerAccount = normalizedEmail === ADMIN_OWNER_EMAIL;
 
           const result =
             q.insertUser.run(
               name.trim(),
-              email
-                .trim()
-                .toLowerCase(),
+              normalizedEmail,
               hashPassword(password),
-              isFirstAccount
+              isOwnerAccount
                 ? 'admin'
                 : 'student',
-              isFirstAccount
+              isOwnerAccount
                 ? 'approved'
                 : 'pending',
               semester,
@@ -632,7 +631,7 @@ const server =
               user:
                 publicUser(user),
               pending:
-                !isFirstAccount
+                !isOwnerAccount
             },
             {
               'Set-Cookie':
@@ -714,6 +713,7 @@ const server =
           url.pathname ===
             '/api/auth/logout'
         ) {
+          const sessionUser = currentUser(req);
           const token =
             cookie(
               req,
@@ -727,7 +727,7 @@ const server =
           }
 
           audit(
-            currentUser(req),
+            sessionUser,
             'logout',
             'session'
           );
@@ -936,97 +936,6 @@ const server =
             );
 
           if (!admin) return;
-
-          const panelAccessMatch =
-            url.pathname.match(
-              /^\/api\/admin\/panel-access\/(\d+)\/(grant|revoke)$/
-            );
-
-          if (
-            req.method === 'POST' &&
-            panelAccessMatch
-          ) {
-            if (
-              !isOwner(admin)
-            ) {
-              return json(
-                res,
-                403,
-                {
-                  error:
-                    'Somente Davi Rubbo Noronha pode conceder ou retirar acessos administrativos.'
-                }
-              );
-            }
-
-            const [
-              ,
-              id,
-              action
-            ] =
-              panelAccessMatch;
-
-            const target =
-              q.userById.get(
-                Number(id)
-              );
-
-            if (!target) {
-              return json(
-                res,
-                404,
-                {
-                  error:
-                    'Usuário não encontrado.'
-                }
-              );
-            }
-
-            if (
-              target.name ===
-                OWNER_NAME &&
-              action === 'revoke'
-            ) {
-              return json(
-                res,
-                403,
-                {
-                  error:
-                    'A conta de Davi Rubbo Noronha é protegida e não pode perder o acesso administrativo.'
-                }
-              );
-            }
-
-            db.prepare(
-              'UPDATE users SET role = ? WHERE id = ?'
-            ).run(
-              action === 'grant'
-                ? 'admin'
-                : 'student',
-              target.id
-            );
-
-            audit(
-              admin,
-              action === 'grant'
-                ? 'admin_access_granted'
-                : 'admin_access_revoked',
-              'user',
-              target.id,
-              {
-                target:
-                  target.name
-              }
-            );
-
-            return json(
-              res,
-              200,
-              {
-                ok: true
-              }
-            );
-          }
 
           if (
             req.method === 'GET' &&

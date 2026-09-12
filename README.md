@@ -11,6 +11,16 @@ Requer Node.js 22.5 ou superior.
 npm start
 ```
 
+Para proteger o painel administrativo, defina o e-mail da conta de Davi Rubbo
+antes de iniciar o servidor. Somente essa conta terá acesso administrativo:
+
+```bash
+ADMIN_OWNER_EMAIL=davi@exemplo.com npm start
+```
+
+Não use esse exemplo como e-mail real: substitua-o pelo e-mail verdadeiro da
+conta de Davi Rubbo. Sem essa variável, nenhuma conta recebe acesso ao painel.
+
 Abra [http://localhost:3000](http://localhost:3000). O arquivo do banco é
 criado automaticamente em `data/nihongo.db` e não deve ser enviado ao Git.
 
